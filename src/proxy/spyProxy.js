@@ -13,6 +13,7 @@ const iconv = require('iconv-lite');
 const jschardet = require('jschardet');
 const domain = require('domain');
 const childProcess = require('child_process');
+const ip = require('ip');
 
 var d = domain.create();
 d.on('error', function(err) {
@@ -89,7 +90,7 @@ module.exports = {
                     }
                     if (rOptions.headers.host === config.SPY_WEINRE_DOMAIN) {
                         rOptions.protocol = 'http:';
-                        rOptions.hostname = '127.0.0.1';
+                        rOptions.hostname = ip.address();
                         rOptions.port = weinrePort;
                         // trick for non-transparent proxy
                         rOptions.path = rPath;
@@ -163,7 +164,7 @@ module.exports = {
                     ports = externalProxyPorts;
                     var externalProxyPort = externalProxyPorts.port;
                     var externalProxyWebPort = externalProxyPorts.webPort;
-                    externalProxy = 'http://127.0.0.1:' + externalProxyPort;
+                    externalProxy = `http://${ip.address()}:` + externalProxyPort;
                     createMitmProxy();
                     successCB(externalProxyPorts);
                 });

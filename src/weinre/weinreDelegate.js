@@ -22,6 +22,7 @@ d.on('error', function (err) {
 });
 
 var spyProxyPort;
+var spyGuiPort;
 var showIframe = false;
 var contentEditable = false;
 
@@ -32,6 +33,7 @@ var cache = false;
 
 weinreDelegate.run = function run({
     cusSpyProxyPort,
+    cusSpyGuiPort,
     cusShowIframe,
     cusAutoDetectBrowser,
     cusExternalProxy,
@@ -39,6 +41,7 @@ weinreDelegate.run = function run({
     cusContentEditable
 }) {
     spyProxyPort = cusSpyProxyPort;
+    spyGuiPort = cusSpyGuiPort;
     showIframe = cusShowIframe;
     autoDetectBrowser = cusAutoDetectBrowser;
     externalProxy = cusExternalProxy;
@@ -46,7 +49,7 @@ weinreDelegate.run = function run({
     contentEditable = cusContentEditable;
     let unBoundedPort;
     // get an unbounded port
-    let tempServer  = new http.Server();
+    let tempServer = new http.Server();
     tempServer.listen(() => {
         unBoundedPort = tempServer.address().port;
         tempServer.close(() => {
@@ -59,7 +62,7 @@ weinreDelegate.createCA = function () {
     mitmproxy.createCA();
 }
 
-function startWeinreServer (port) {
+function startWeinreServer(port) {
     console.log(colors.green('正在启动代理'));
     d.run(() => {
 
@@ -73,7 +76,7 @@ function startWeinreServer (port) {
         });
         weinreServer.on('listening', () => {
 
-            fs.readFile(path.resolve(__dirname, '../../template/inject.js.template.html'), 'utf8', function (err,tpl) {
+            fs.readFile(path.resolve(__dirname, '../../template/inject.js.template.html'), 'utf8', function (err, tpl) {
                 if (err) {
                     return console.log(err);
                 }
@@ -94,15 +97,18 @@ function startWeinreServer (port) {
                         if (!externalProxy) {
                             var webPort = externalProxyPorts.webPort;
                             var guiServer = new http.Server();
-                            guiServer.listen(() => {
+                            guiServer.listen(spyGuiPort, ip.address(), () => {
                                 setTimeout(() => {
                                     var guiPort = guiServer.address().port;
                                     if (process.platform === 'win32' || process.platform === 'win64') {
-                                        child_process.exec(`start http://127.0.0.1:${guiPort}`);
-                                        console.log(colors.green(`浏览器打开 ---> http://127.0.0.1:${guiPort}`));
+                                        child_process.exec(`start http://${ip.address()}:${guiPort}`);
+                                        console.log(colors.green(`浏览器打开 ---> http://${ip.address()}:${guiPort}`));
+                                    } if (process.platform === 'linux') {
+                                        console.log(colors.green(`请手动打开WebUI ---> http://${ip.address()}:${guiPort}`));
                                     } else {
-                                        child_process.exec(`open http://127.0.0.1:${guiPort}`);
-                                        console.log(colors.green(`浏览器打开 ---> http://127.0.0.1:${guiPort}`));
+                                        child_process.exec(`open http://${ip.address()}:${guiPort}`);
+                                        console.log(colors.green(`浏览器打开 ---> http://${ip.address()}:${guiPort}`));
+                                        console.log(colors.green(`xxxxxxxxxxxxx ${process.platform}`));
                                     }
                                 }, 600)
                             });
@@ -112,8 +118,8 @@ function startWeinreServer (port) {
                             var fp = path.join(__dirname, '../../template/wrap.html');
                             var fileTemp = (fs.readFileSync(fp)).toString();
                             var fileString = _.template(fileTemp)({
-                                weinreUrl: `http://127.0.0.1:${port}/client`,
-                                anyProxyUrl: `http://127.0.0.1:${webPort}`
+                                weinreUrl: `http://${ip.address()}:${port}/client`,
+                                anyProxyUrl: `http://${ip.address()}:${webPort}`
                             });
                             guiServer.on('request', (req, res) => {
                                 res.setHeader('Content-Type', 'text/html;charset=utf-8');
@@ -123,11 +129,11 @@ function startWeinreServer (port) {
                         } else {
                             // auto open debugger page
                             if (process.platform === 'win32' || process.platform === 'win64') {
-                                child_process.exec(`start http://127.0.0.1:${port}/client`);
-                                console.log(colors.green(`浏览器打开 ---> http://127.0.0.1:${port}/client`));
+                                child_process.exec(`start http://${ip.address()}:${port}/client`);
+                                console.log(colors.green(`浏览器打开 ---> http://${ip.address()}:${port}/client`));
                             } else {
-                                child_process.exec(`open http://127.0.0.1:${port}/client`);
-                                console.log(colors.green(`浏览器打开 ---> http://127.0.0.1:${port}/client`));
+                                child_process.exec(`open http://${ip.address()}:${port}/client`);
+                                console.log(colors.green(`浏览器打开 ---> http://${ip.address()}:${port}/client`));
                             }
                         }
                         console.log(colors.green(`本机在当前网络下的IP地址为：${ip.address()}`))

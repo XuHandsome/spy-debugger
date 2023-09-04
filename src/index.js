@@ -8,6 +8,7 @@ const http = require('http')
 program
     .version(require('../package.json').version)
     .option('-p, --port [value]', 'start port')
+    .option('-g, --guiPort [value]', 'webgui start port')
     .option('-i, --showIframe [value]', 'spy iframe window')
     .option('-b, --autoDetectBrowser [value]', 'Auto detect Browser Request')
     .option('-e, --externalProxy [value]', 'set external Proxy')
@@ -17,6 +18,8 @@ program
 program.parse(process.argv)
 
 var cusSpyProxyPort = program.port || 9888
+
+var cusSpyGuiPort = program.guiPort || 19888
 
 var cusShowIframe = false
 if (program.showIframe === 'true') {
@@ -64,6 +67,7 @@ tempServerPromise.then(
         weinreDelegate.run({
             cusExternalProxy: program.externalProxy,
             cusSpyProxyPort,
+            cusSpyGuiPort,
             cusShowIframe,
             cusAutoDetectBrowser: autoDetectBrowser,
             cusCache,
